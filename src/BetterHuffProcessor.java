@@ -9,8 +9,7 @@ public class BetterHuffProcessor implements IHuffProcessor {
 	
 	@Override
 	public void setViewer(HuffViewer viewer) {
-		// TODO Auto-generated method stub
-
+		myViewer = viewer;
 	}
 
 	@Override
