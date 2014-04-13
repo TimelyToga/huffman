@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.HashMap;
 
 
 public class BetterHuffProcessor implements IHuffProcessor {
@@ -14,7 +15,14 @@ public class BetterHuffProcessor implements IHuffProcessor {
 
 	@Override
 	public int preprocessCompress(InputStream in) throws IOException {
-		// TODO Auto-generated method stub
+		BitInputStream stream = new BitInputStream(in);
+		HashMap<String, Integer> weights = new HashMap<String, Integer>();
+		int current = stream.readBits(howManyBits);
+		
+		while(successfully read bits){
+			// update weights for current
+			// read enxt character
+		}
 		return 0;
 	}
 	
