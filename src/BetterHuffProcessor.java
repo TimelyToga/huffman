@@ -5,6 +5,8 @@ import java.io.OutputStream;
 
 public class BetterHuffProcessor implements IHuffProcessor {
 
+    private HuffViewer myViewer;
+	
 	@Override
 	public void setViewer(HuffViewer viewer) {
 		// TODO Auto-generated method stub
@@ -16,6 +18,10 @@ public class BetterHuffProcessor implements IHuffProcessor {
 		// TODO Auto-generated method stub
 		return 0;
 	}
+	
+    private void showString(String s){
+        myViewer.update(s);
+    }
 
 	@Override
 	public int compress(InputStream in, OutputStream out, boolean force) throws IOException {
