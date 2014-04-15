@@ -5,23 +5,46 @@ import java.util.HashMap;
 import java.util.PriorityQueue;
 
 public class SimpleHuffProcessor implements IHuffProcessor {
-    
+	
     private HuffViewer myViewer;
     HashMap<Integer, String> paths = new HashMap<Integer, String>();
     int[] weights;
     TreeNode root;
     
     public int compress(InputStream in, OutputStream out, boolean force) throws IOException {
+    	BitOutputStream outStream = new BitOutputStream(out);
+    	
+    	int writeCount = 0;
+    	
     	//Set up Magic Number
-    	out.write(MAGIC_NUMBER);
-    	// Get counts for the header
+    	outStream.writeBits(BITS_PER_INT, MAGIC_NUMBER);
+    	writeCount += BITS_PER_INT;
     	
     	// Write header
     	for(int a = 0; a < ALPH_SIZE; a++){
     		out.write(weights[a]);
+    		writeCount += BITS_PER_INT;
     	}
-    	// Write the File
-
+    	
+    	// Read current character
+		int current = in.read();
+		while(current != -1){
+			// Get the tree path in String form
+			String curPath = paths.get(current);
+			for(int a = 1; a <= curPath.length(); a++){
+				String curByte = curPath.substring(a-1, a);
+				if(curByte.equals("0")){
+					outStream.writeBits(1, 0);
+				} else if(curByte.equals("1")){
+					outStream.writeBits(1, 1);
+				} else {
+					System.out.println("You are fucked.");
+				}
+			}
+		}
+		
+		System.out.println("File wrote: " + writeCount);
+		return writeCount;
     }
 
     public int preprocessCompress(InputStream in) throws IOException {
