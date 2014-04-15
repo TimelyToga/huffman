@@ -11,8 +11,11 @@ public class SimpleHuffProcessor implements IHuffProcessor {
     TreeNode root;
     
     public int compress(InputStream in, OutputStream out, boolean force) throws IOException {
-        throw new IOException("compress is not implemented");
-        //return 0;
+    	//Set up Magic Number
+    	
+    	// Write header
+    	
+    	// Write the File
     }
 
     public int preprocessCompress(InputStream in) throws IOException {
