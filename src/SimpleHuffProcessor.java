@@ -58,7 +58,6 @@ public class SimpleHuffProcessor implements IHuffProcessor {
     	 */
     	root = nodeForest.poll();
     	
-    	
     	printWeights(weights);
     	
     	// Create path map
@@ -84,6 +83,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
         	findAllPaths(curNode.myRight, sb.append("1"));
     	}
     	
+    	sb.deleteCharAt(sb.length());
     	return;
     }
 
