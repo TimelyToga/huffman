@@ -61,7 +61,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
     	printWeights(weights);
     	
     	// Create path map
-    	findAllPaths(root, new StringBuilder());
+    	findAllPaths(root, "");
     	for(Integer i : paths.keySet()){
     		System.out.println(paths.get(i));
     	}
@@ -69,21 +69,23 @@ public class SimpleHuffProcessor implements IHuffProcessor {
     	return readBits;
     }
     
-    public void findAllPaths(TreeNode curNode, StringBuilder sb){
+    public void findAllPaths(TreeNode curNode, String s){
     	// Base case
     	if(curNode.myLeft == null && curNode.myRight == null){
-    		paths.put(curNode.myValue, sb.toString());
+    		paths.put(curNode.myValue, s);
     	}
     	
     	// Recursive Step
     	if(curNode.myLeft != null){
-        	findAllPaths(curNode.myLeft, sb.append("0"));
+        	findAllPaths(curNode.myLeft, s + "0");
     	}
     	if(curNode.myRight != null){
-        	findAllPaths(curNode.myRight, sb.append("1"));
+        	findAllPaths(curNode.myRight, s + "1");
     	}
     	
-    	sb.deleteCharAt(sb.length());
+    	if(s.length() != 0){
+        	s = s.substring(0, s.length()-1);
+    	}
     	return;
     }
 
