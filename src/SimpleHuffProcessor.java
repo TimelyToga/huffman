@@ -18,6 +18,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
     public int preprocessCompress(InputStream in) throws IOException {
     	BitInputStream stream = new BitInputStream(in);
     	PriorityQueue<TreeNode> nodeForest = new PriorityQueue<TreeNode>();
+    	
     	int readBits = 0;
     	int[] weights = new int[IHuffConstants.ALPH_SIZE];
     	int current = stream.readBits(IHuffConstants.BITS_PER_WORD);
@@ -25,9 +26,10 @@ public class SimpleHuffProcessor implements IHuffProcessor {
     	// As long as there are bits, read them
     	while(current != -1){
     		weights[current] += 1;
-    		current = stream.readBits(8);
+    		current = stream.readBits(IHuffConstants.BITS_PER_WORD);
     		readBits += 8;
     	}
+    	
     	TreeNode curNode;
     	for(int a = 0; a < weights.length; a++){
     		int i = weights[a];
@@ -36,6 +38,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
     			nodeForest.add(curNode);
     		}
     	}
+    	
     	System.out.println(nodeForest.peek().myWeight);
     	System.out.println(nodeForest.peek().myValue);
     	
@@ -44,8 +47,8 @@ public class SimpleHuffProcessor implements IHuffProcessor {
     	while(nodeForest.size() != 1){
     		TreeNode lBranch = nodeForest.poll();
     		TreeNode rBranch = nodeForest.poll();
-    		int newVal = lBranch.myValue + rBranch.myValue;
-    		TreeNode newNode = new TreeNode(newVal, lBranch, rBranch);
+    		int newWeight = lBranch.myWeight + rBranch.myWeight;
+    		TreeNode newNode = new TreeNode(newWeight, lBranch, rBranch);
     		nodeForest.add(newNode);
     	}
     	/*
