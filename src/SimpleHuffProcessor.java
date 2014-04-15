@@ -57,6 +57,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
     	 */
     	root = nodeForest.poll();
     	
+    	
     	printWeights(weights);
     	return readBits;
     }
