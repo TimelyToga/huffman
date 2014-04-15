@@ -51,6 +51,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
     		TreeNode newNode = new TreeNode(newWeight, lBranch, rBranch);
     		nodeForest.add(newNode);
     	}
+    	
     	/*
     	 * Initialize pointer to the root node. 
     	 * NOTE: This should remove the last item in the PriorityQueue
@@ -58,11 +59,31 @@ public class SimpleHuffProcessor implements IHuffProcessor {
     	root = nodeForest.poll();
     	
     	printWeights(weights);
+    	
+    	// Create path map
+    	findAllPaths(root, new StringBuilder());
+    	for(Integer i : paths.keySet()){
+    		System.out.println(paths.get(i));
+    	}
+    	
     	return readBits;
     }
     
-    public boolean buildTree(PriorityQueue nodeForest){
-    	return true;
+    public void findAllPaths(TreeNode curNode, StringBuilder sb){
+    	// Base case
+    	if(curNode.myLeft == null && curNode.myRight == null){
+    		paths.put(curNode.myValue, sb.toString());
+    	}
+    	
+    	// Recursive Step
+    	if(curNode.myLeft != null){
+        	findAllPaths(curNode.myLeft, sb.append("0"));
+    	}
+    	if(curNode.myRight != null){
+        	findAllPaths(curNode.myRight, sb.append("1"));
+    	}
+    	
+    	return;
     }
 
     public void setViewer(HuffViewer viewer) {

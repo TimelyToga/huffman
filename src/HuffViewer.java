@@ -64,6 +64,12 @@ public class HuffViewer extends JFrame {
         myModel = model;
         myModel.setViewer(this);
     }
+    
+    public void quickStart(){
+    	String path = "/test.txt";
+    	File f = new File(path);
+    	doSave();
+    }
 
     protected JPanel makeMessage() {
         JPanel p = new JPanel(new BorderLayout());
