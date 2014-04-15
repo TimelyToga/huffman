@@ -8,14 +8,20 @@ public class SimpleHuffProcessor implements IHuffProcessor {
     
     private HuffViewer myViewer;
     HashMap<Integer, String> paths = new HashMap<Integer, String>();
+    int[] weights;
     TreeNode root;
     
     public int compress(InputStream in, OutputStream out, boolean force) throws IOException {
     	//Set up Magic Number
+    	out.write(MAGIC_NUMBER);
+    	// Get counts for the header
     	
     	// Write header
-    	
+    	for(int a = 0; a < ALPH_SIZE; a++){
+    		out.write(weights[a]);
+    	}
     	// Write the File
+
     }
 
     public int preprocessCompress(InputStream in) throws IOException {
@@ -23,7 +29,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
     	PriorityQueue<TreeNode> nodeForest = new PriorityQueue<TreeNode>();
     	
     	int readBits = 0;
-    	int[] weights = new int[IHuffConstants.ALPH_SIZE];
+    	weights = new int[IHuffConstants.ALPH_SIZE];
     	int current = stream.readBits(IHuffConstants.BITS_PER_WORD);
     	readBits += IHuffConstants.BITS_PER_WORD;
     	// As long as there are bits, read them
