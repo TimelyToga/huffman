@@ -58,6 +58,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
     	 */
     	root = nodeForest.poll();
     	
+    	
     	printWeights(weights);
     	
     	// Create path map
