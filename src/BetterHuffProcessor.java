@@ -16,7 +16,7 @@ public class BetterHuffProcessor implements IHuffProcessor {
 	@Override
 	public int preprocessCompress(InputStream in) throws IOException {
 		BitInputStream stream = new BitInputStream(in);
-		HashMap<String, Integer> weights = new HashMap<String, Integer>();
+		int[] weights = new int[256];
 		int current = stream.readBits(howManyBits);
 		
 		while(successfully read bits){

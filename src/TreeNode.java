@@ -46,6 +46,12 @@ public class TreeNode implements Comparable<TreeNode> {
         myLeft = ltree;
         myRight = rtree;
     }
+    
+    public TreeNode(int weight, TreeNode lTree, TreeNode rTree){
+    	this.myLeft = lTree;
+    	this.myRight = rTree;
+    	this.myWeight = weight;
+    }
 
     /**
      * Return value  based on comparing this TreeNode to another.
