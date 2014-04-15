@@ -1,4 +1,3 @@
-\
 /**
  * Main/launch program for Huff assignment. A better
  * comment than this is warranted.
