@@ -13,6 +13,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
     
     public int compress(InputStream in, OutputStream out, boolean force) throws IOException {
     	BitOutputStream outStream = new BitOutputStream(out);
+    	System.out.println("Started compress...");
     	
     	int writeCount = 0;
     	
@@ -40,9 +41,12 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 				} else {
 					System.out.println("You are fucked.");
 				}
+				writeCount += 1;
 			}
+			current = in.read();
 		}
 		
+		out.write(PSEUDO_EOF);
 		System.out.println("File wrote: " + writeCount);
 		return writeCount;
     }
@@ -62,35 +66,10 @@ public class SimpleHuffProcessor implements IHuffProcessor {
     		readBits += 8;
     	}
     	
-    	TreeNode curNode;
-    	for(int a = 0; a < weights.length; a++){
-    		int i = weights[a];
-    		if(i != 0){
-    			curNode = new TreeNode(a, i);
-    			nodeForest.add(curNode);
-    		}
-    	}
+    	// Create the tree
+    	nodeForest = createTree(nodeForest);
     	
-    	System.out.println(nodeForest.peek().myWeight);
-    	System.out.println(nodeForest.peek().myValue);
-    	
-    	// Create the tree by combining two items in the nodeForest until
-    	// There is only one item remaining.
-    	while(nodeForest.size() != 1){
-    		TreeNode lBranch = nodeForest.poll();
-    		TreeNode rBranch = nodeForest.poll();
-    		int newWeight = lBranch.myWeight + rBranch.myWeight;
-    		TreeNode newNode = new TreeNode(newWeight, lBranch, rBranch);
-    		nodeForest.add(newNode);
-    	}
-    	
-    	/*
-    	 * Initialize pointer to the root node. 
-    	 * NOTE: This should remove the last item in the PriorityQueue
-    	 */
-    	root = nodeForest.poll();
-    	
-    	printWeights(weights);
+//    	printWeights(weights);
     	
     	// Create path map
     	findAllPaths(root, "");
@@ -98,6 +77,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
     		System.out.println(paths.get(i));
     	}
     	
+    	// BAD IMPLEMENTATION Update count
 		for(Integer i : paths.keySet()){
 			String s = paths.get(i);
 			readBits -= s.length();
@@ -125,14 +105,72 @@ public class SimpleHuffProcessor implements IHuffProcessor {
     	}
     	return;
     }
+    
+    public PriorityQueue<TreeNode> createTree(PriorityQueue<TreeNode> in){
+    	TreeNode curNode;
+    	for(int a = 0; a < weights.length; a++){
+    		int i = weights[a];
+    		if(i != 0){
+    			curNode = new TreeNode(a, i);
+    			in.add(curNode);
+    		}
+    	}
+    	
+    	// Create the tree by combining two items in the nodeForest until
+    	// There is only one item remaining.
+    	while(in.size() != 1){
+    		TreeNode lBranch = in.poll();
+    		TreeNode rBranch = in.poll();
+    		int newWeight = lBranch.myWeight + rBranch.myWeight;
+    		TreeNode newNode = new TreeNode(newWeight, lBranch, rBranch);
+    		in.add(newNode);
+    	}
+    	
+    	/*
+    	 * Initialize pointer to the root node. 
+    	 * NOTE: This should remove the last item in the PriorityQueue
+    	 */
+    	root = in.poll();
+    	
+    	return in;
+    }
 
     public void setViewer(HuffViewer viewer) {
         myViewer = viewer;
     }
 
     public int uncompress(InputStream in, OutputStream out) throws IOException {
-        throw new IOException("uncompress not implemented");
-        //return 0;
+    	BitInputStream inB = new BitInputStream(in);
+    	PriorityQueue<TreeNode> nodeForest = new PriorityQueue<TreeNode>();
+    	TreeNode uncompressRoot;
+    	int unCompressCount = 0;
+    	
+    	clearWeights();
+    	
+    	// Read header
+    	for(int a = 0; a < ALPH_SIZE; a++){
+    		int curHeaderWeight = inB.readBits(BITS_PER_WORD);
+    		weights[curHeaderWeight] = curHeaderWeight;
+    	}
+    	
+    	// Recreate the tree
+    	nodeForest = createTree(nodeForest);
+    	uncompressRoot = nodeForest.poll();
+    	
+    	findAllPaths(root, "");
+    	
+    	
+    	//return 0;
+    }
+    
+    /**
+     * Reset the global weights parameter for passing between Huff and UnHuff
+     */
+    public void clearWeights(){
+    	for(int a = 0; a < weights.length; a++){
+    		weights[a] = 0;
+    	}
+    	paths.clear();
     }
     
     private void showString(String s){
