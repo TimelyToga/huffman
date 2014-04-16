@@ -98,6 +98,11 @@ public class SimpleHuffProcessor implements IHuffProcessor {
     		System.out.println(paths.get(i));
     	}
     	
+		for(Integer i : paths.keySet()){
+			String s = paths.get(i);
+			readBits -= s.length();
+		}
+    	
     	return readBits;
     }
     
