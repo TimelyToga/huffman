@@ -20,7 +20,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 	int originalSize; // size of original file
 	int difference; // actual file size - compressed file size 
 	
-	boolean verbose = true;
+	boolean verbose = false;
 
 	/**
 	 * method: compress
