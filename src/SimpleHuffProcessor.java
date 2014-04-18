@@ -1,3 +1,4 @@
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -270,6 +271,10 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 		outB.close(); // close bitstream
 		inB.close(); // close stream
 		showString("Uncompressed file size: " + unCompressCount + " bytes");
+		
+		String filePath = myViewer.unHuffFile.getCanonicalPath();
+		File originalFile = new File(filePath.substring(0, filePath.length()-3));
+		originalSize = (int)originalFile.length()*8;
 
 		// check if uncompressed file size and original file size the same (if not, throw error)
 		if (unCompressCount == originalSize){

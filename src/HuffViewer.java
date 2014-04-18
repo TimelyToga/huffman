@@ -18,6 +18,8 @@ import java.nio.channels.FileChannel;
  *
  */
 public class HuffViewer extends JFrame {
+	
+	public File unHuffFile;
     
     private static String HUFF_SUFFIX = ".hf";
     private static String UNHUFF_SUFFIX = ".unhf";   
@@ -203,6 +205,7 @@ public class HuffViewer extends JFrame {
                 return;
             }
             file = ourChooser.getSelectedFile();
+            unHuffFile = file;
             String name = file.getName();
             String uname = name;
             

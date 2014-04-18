@@ -11,39 +11,33 @@ public class HuffMark {
 		ourOpenChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 	}
 
-	private double					myTotalCompressTime;
-	private long					myTotalUncompressedBytes;
-	private long					myTotalCompressedBytes;
-
-	private long					huffedUncompressedBytes;
-	private long					huffedCompressedBytes;
-	private double					huffedCompressTime;
-
-	private long					huffed2UncompressedBytes;
-	private long					huffed2CompressedBytes;
-	private double					huffed2CompressTime;
+	private double[]				myTotalCompressTime;
+	private long[]					myTotalUncompressedBytes;
+	private long[]					myTotalCompressedBytes;
 
 	private IHuffProcessor			myHuffer;
-	private static String			SUFFIX			= ".hf.hf.hf";
+	private static String			SUFFIX			= ".hf";
 	private static boolean			FAST_READER		= true;
+	private String[]				suffixes;
 
 	boolean							preHuffed;
 	boolean							preHuffed2;
 
+	int								numComp			= 0;
+
 	public void compress(File f) throws IOException {
-		preHuffed = false;
-		preHuffed2 = false;
-
-		if (f.getName().endsWith(SUFFIX)) return; // don't read .hf files!
-		if (f.isDirectory()) return; // don't read directories
-
-		if (f.getName().endsWith(".hf")) {
-			preHuffed = true;
-			if (f.getName().endsWith(".hf.hf")) {
-				preHuffed2 = true;
-				preHuffed = false;
+		int curCompMagnitude = 0;
+		
+		// Get curCompMagnitude
+		for (int a = suffixes.length - 1; a >= 0; a--) {
+			if (f.getName().endsWith(suffixes[a])) {
+				curCompMagnitude = a + 1;
+				break;
 			}
 		}
+		
+		if (f.getName().endsWith(SUFFIX)) return; // don't read .hf files!
+		if (f.isDirectory()) return; // don't read directories
 
 		double start = System.currentTimeMillis();
 		myHuffer.preprocessCompress(getFastByteReader(f));
@@ -54,19 +48,9 @@ public class HuffMark {
 		double end = System.currentTimeMillis();
 		double time = (end - start) / 1000.0;
 
-		if (preHuffed2) {
-			huffed2UncompressedBytes += f.length();
-			huffed2CompressedBytes += outFile.length();
-			huffed2CompressTime += time;
-		} else if (preHuffed) {
-			huffedUncompressedBytes += f.length();
-			huffedCompressedBytes += outFile.length();
-			huffedCompressTime += time;
-		} else {
-			myTotalUncompressedBytes += f.length();
-			myTotalCompressedBytes += outFile.length();
-			myTotalCompressTime += time;
-		}
+		myTotalUncompressedBytes[curCompMagnitude] += f.length();
+		myTotalCompressedBytes[curCompMagnitude] += outFile.length();
+		myTotalCompressTime[curCompMagnitude] += time;
 
 		System.out.printf("%s from\t %d to\t %d in\t %.3f\n", f.getName(), f.length(), outFile.length(), time);
 		System.out.println(f.getName() + " compression percentage: "
@@ -85,31 +69,31 @@ public class HuffMark {
 			for (File f : list) {
 				compress(f);
 			}
-			System.out.println("--------");
-			System.out.printf("total bytes read: %d\n", myTotalUncompressedBytes);
-			System.out.printf("total compressed bytes %d\n", myTotalCompressedBytes);
-			System.out.printf("total percent compression %.3f\n", 100.0 * (1.0 - 1.0 * myTotalCompressedBytes
-					/ myTotalUncompressedBytes));
-			System.out.printf("compression time: %.3f\n", myTotalCompressTime);
-
-			System.out.println("----Huffed Results----");
-			System.out.printf("total bytes read: %d\n", huffedUncompressedBytes);
-			System.out.printf("total compressed bytes %d\n", huffedCompressedBytes);
-			System.out.printf("total percent compression %.3f\n", 100.0 * (1.0 - 1.0 * huffedCompressedBytes
-					/ huffedUncompressedBytes));
-			System.out.printf("compression time: %.3f\n", huffedCompressTime);
-
-			System.out.println("----Huffed2 Results----");
-			System.out.printf("total bytes read: %d\n", huffed2UncompressedBytes);
-			System.out.printf("total compressed bytes %d\n", huffed2CompressedBytes);
-			System.out.printf("total percent compression %.3f\n", 100.0 * (1.0 - 1.0 * huffed2CompressedBytes
-					/ huffed2UncompressedBytes));
-			System.out.printf("compression time: %.3f\n", huffed2CompressTime);
+			for(int a = 0; a < numComp; a++){
+				System.out.println("---Huff Count "  + a + "-----");
+				System.out.printf("total bytes read: %d\n", myTotalUncompressedBytes[a]);
+				System.out.printf("total compressed bytes %d\n", myTotalCompressedBytes[a]);
+				System.out.printf("total percent compression %.3f\n", 100.0 * (1.0 - 1.0 * myTotalCompressedBytes[a]
+						/ myTotalUncompressedBytes[a]));
+				System.out.printf("compression time: %.3f\n", myTotalCompressTime[a]);
+			}
 		}
 	}
 
 	public static void main(String[] args) throws IOException {
 		HuffMark hf = new HuffMark();
+		// Compute SUFFIX
+		hf.suffixes = new String[hf.numComp];
+		for (int a = 0; a < hf.numComp; a++) {
+			hf.SUFFIX += ".hf";
+			hf.suffixes[a] = hf.SUFFIX.toLowerCase();
+		}
+		
+		// Initialize arrays
+		hf.myTotalCompressTime = new double[hf.numComp];
+		hf.myTotalUncompressedBytes = new long[hf.numComp];
+		hf.myTotalCompressedBytes = new long[hf.numComp];
+		
 		hf.doMark();
 	}
 
