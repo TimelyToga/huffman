@@ -1,6 +1,8 @@
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.PriorityQueue;
 /**
@@ -19,6 +21,8 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 	int originalSize; // size of original file
 	int difference; // actual file size - compressed file size 
 	
+	boolean verbose = false;
+
 	/**
 	 * method: compress
 	 * use: compresses file by Huffman encoding
@@ -33,7 +37,8 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 		if(!force && difference < 0){
 			outStream.close();
 			inStream.close();
-			throw new IOException("Oops. Compressed file size is greater than original file size.");
+			throw new IOException("Oops. Compressed file size is greater than original file size.\n" +
+					"Use Force Compression to compress this file.");
 		}
 		
 		// write magic number 
@@ -104,6 +109,9 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 				nodeForest.add(new TreeNode(i,freqMap.get(i)));
 			}
 		}
+		
+		// Print extra weight information 
+		if(verbose) printWeights();
 		
 		TreeNode root = createTree(nodeForest); // create tree root
 		findAllPaths(root, ""); // fill HashMap paths
@@ -263,6 +271,14 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 		outB.close(); // close bitstream
 		inB.close(); // close stream
 		showString("Uncompressed file size: " + unCompressCount + " bytes");
+		
+		/*
+		 * Get the correct file size for the original file.
+		 * This allows the original file to be up several layers of compression
+		 */
+		String filePath = myViewer.unHuffFile.getCanonicalPath();
+		File originalFile = new File(filePath.substring(0, filePath.length()-3));
+		originalSize = (int)originalFile.length()*8;
 
 		// check if uncompressed file size and original file size the same (if not, throw error)
 		if (unCompressCount == originalSize){
@@ -278,7 +294,41 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 	}
 
 	private void showString(String s){
-		myViewer.update(s);
+		if(myViewer != null){
+			myViewer.update(s);
+		} else {
+			System.out.println(s);
+		}
+	}
+	
+	/**
+	 * This method prints out additional information about the freqMap including:
+	 * Character count
+	 * Char count of top 5 characters
+	 */
+	public void printWeights(){
+		int[] weights = new int[freqMap.keySet().size()];
+		int curPos = 0;
+		for(Integer key : freqMap.keySet()){
+			Integer value = freqMap.get(key);
+			weights[curPos] = value;
+			curPos++;
+		}
+		
+		// Count number of characters
+		int charCount = 0;
+		for(Integer i : weights){
+			if(i != 0) charCount++;
+		}
+		System.out.println("Number of characters: " +  charCount);
+		Arrays.sort(weights);
+		int curName = 0;
+		String[] names = {"1st: ", "2nd: ", "3rd: ", "4th: ", "5th: "};
+		System.out.println("Top " +  (names.length-1) + " characters.");
+		for(int a = weights.length - 1; a > (weights.length) - names.length; a--){
+			System.out.println(names[curName] + weights[a]);
+			curName++;
+		}
 	}
 
 }
