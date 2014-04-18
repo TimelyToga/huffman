@@ -205,6 +205,16 @@ public class HuffViewer extends JFrame {
             file = ourChooser.getSelectedFile();
             String name = file.getName();
             String uname = name;
+            
+            // Assess whether this file is a huffed file
+            String curFName = file.getName();
+            int curLen = curFName.length();
+            boolean isHuffedFile = curFName.substring(curLen - 3, curLen).equals(".hf");
+            if(!isHuffedFile){
+            	this.showError("This file is not a .hf file. Cannot be unhuffed.");
+            	return;
+            }
+            
             if (name.endsWith(HUFF_SUFFIX)) {
                 uname = name.substring(0,name.length() - HUFF_SUFFIX.length()) + UNHUFF_SUFFIX;
             }
@@ -221,6 +231,7 @@ public class HuffViewer extends JFrame {
             int pos = path.lastIndexOf(name);
             newName = path.substring(0, pos) + newName;
             final File newFile = new File(newName);
+            
             ProgressMonitorInputStream temp = null;
             if (myFast){
                 temp = getMonitorableStream(getFastByteReader(file),"uncompressing bits ...");
