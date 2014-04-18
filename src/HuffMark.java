@@ -40,7 +40,7 @@ public class HuffMark {
         
         System.out.printf("%s from\t %d to\t %d in\t %.3f\n",f.getName(),f.length(),outFile.length(),time);
         System.out.println(f.getName() + " compression percentage: " +
-        (100.0 * (1.0 - 1.0*(double)f.length()/(double)outFile.length())));
+        (100.0 * (1.0 - 1.0*(double)outFile.length()/(double)f.length())));
         
     }
     
