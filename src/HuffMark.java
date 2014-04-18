@@ -23,7 +23,7 @@ public class HuffMark {
 	boolean							preHuffed;
 	boolean							preHuffed2;
 
-	int								numComp			= 0;
+	int								numComp			= 10;
 
 	public void compress(File f) throws IOException {
 		int curCompMagnitude = 0;
@@ -107,7 +107,7 @@ public class HuffMark {
 			return null;
 		}
 		int pos = path.lastIndexOf(name);
-		String newName = path.substring(0, pos) + name + SUFFIX;
+		String newName = path.substring(0, pos) + name + ".hf";
 		return newName;
 	}
 

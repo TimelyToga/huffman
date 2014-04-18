@@ -272,6 +272,10 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 		inB.close(); // close stream
 		showString("Uncompressed file size: " + unCompressCount + " bytes");
 		
+		/*
+		 * Get the correct file size for the original file.
+		 * This allows the original file to be up several layers of compression
+		 */
 		String filePath = myViewer.unHuffFile.getCanonicalPath();
 		File originalFile = new File(filePath.substring(0, filePath.length()-3));
 		originalSize = (int)originalFile.length()*8;
