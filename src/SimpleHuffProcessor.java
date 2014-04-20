@@ -9,7 +9,7 @@ import java.util.PriorityQueue;
  * SimpleHuffProcessor.java
  * Completed April 17, 2014
  * @author Emre Sonmez (ebs32)
- * @author Tim Blumberg (NETID)
+ * @author Tim Blumberg (tsb20)
  */
 
 public class SimpleHuffProcessor implements IHuffProcessor {
@@ -20,7 +20,13 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 	int compressedSize; // size of compressed file
 	int originalSize; // size of original file
 	int difference; // actual file size - compressed file size 
+	TreeNode root;
 	
+	/*
+	 * 0 - Standard weights array header
+	 * 1 - Tree header implementation
+	 */
+	public final int HEADER_TYPE = 1;
 	boolean verbose = false;
 
 	/**
@@ -45,13 +51,26 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 		outStream.writeBits(BITS_PER_INT, MAGIC_NUMBER);
 
 		// write header
-		for(int a = 0; a < ALPH_SIZE; a++){
-			if (freqMap.containsKey(a)){ // pull frequencies from HashMap & write to header
-				outStream.writeBits(BITS_PER_INT,freqMap.get(a));
-			}else{ // write 0 to header
-				outStream.writeBits(BITS_PER_INT,0);
+		switch( HEADER_TYPE){
+			// Standard
+			case 0:{
+				for(int a = 0; a < ALPH_SIZE; a++){
+					if (freqMap.containsKey(a)){ // pull frequencies from HashMap & write to header
+						outStream.writeBits(BITS_PER_INT,freqMap.get(a));
+					}else{ // write 0 to header
+						outStream.writeBits(BITS_PER_INT,0);
+					}
+				}
+				break;
 			}
+			// Tree header
+			case 1:{
+				treeTraversal(root, outStream);
+			}
+			default:
+				System.out.println("Choose a correct HEADER_TYPE value");
 		}
+
 		
 		// compress file
 		int current; // initialize integer (will represent bits read from inStream)
@@ -113,7 +132,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 		// Print extra weight information 
 		if(verbose) printWeights();
 		
-		TreeNode root = createTree(nodeForest); // create tree root
+		root = createTree(nodeForest); // create tree root
 		findAllPaths(root, ""); // fill HashMap paths
 		
 		// calculate size of original file
@@ -219,11 +238,22 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 			outB.close();
 			throw new IOException("Oops. Magic numbers are not equal.");
 		}
+		
+		// Handle the header
+		switch(HEADER_TYPE){
+			// Standard header style
+			case 0:{
+				// create map of frequencies
+				freqMap = new HashMap<Integer,Integer>();
+				for (int i = 0; i < ALPH_SIZE; i++){
+					freqMap.put(i,inB.readBits(BITS_PER_INT));
+				}
 
-		// create map of frequencies
-		freqMap = new HashMap<Integer,Integer>();
-		for (int i = 0; i < ALPH_SIZE; i++){
-			freqMap.put(i,inB.readBits(BITS_PER_INT));
+			}
+			// Tree header
+			case 1:{
+				
+			}
 		}
 
 		// add EOF to freqMap
@@ -328,6 +358,25 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 		for(int a = weights.length - 1; a > (weights.length) - names.length; a--){
 			System.out.println(names[curName] + weights[a]);
 			curName++;
+		}
+		
+	}
+	
+	public void treeTraversal(TreeNode curNode, BitOutputStream outStream){
+		// Base case
+		if(curNode.myLeft == null && curNode.myRight == null){
+			outStream.writeBits(1, 1);
+			outStream.writeBits(BITS_PER_WORD, curNode.myValue);
+		}
+		
+		// Pre-order traversal: current, left, right
+		// write a 0 for current node
+		outStream.writeBits(1, 0);
+		if(curNode.myLeft != null){
+			treeTraversal(curNode.myLeft, outStream);
+		}
+		if(curNode.myRight != null){
+			treeTraversal(curNode.myRight, outStream);
 		}
 	}
 
