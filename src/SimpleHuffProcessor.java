@@ -52,7 +52,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 		outStream.writeBits(BITS_PER_INT, MAGIC_NUMBER);
 
 		// write header
-		switch( HEADER_TYPE){
+		switch(HEADER_TYPE){
 			// Standard
 			case 0:{
 				for(int a = 0; a < ALPH_SIZE; a++){
@@ -68,9 +68,11 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 			case 1:{
 				treeTraversal(root, outStream);
 				outStream.writeBits(BITS_PER_WORD + 1, PSEUDO_EOF);
+				break;
 			}
 			default:
 				System.out.println("Choose a correct HEADER_TYPE value");
+				break;
 		}
 
 		
@@ -227,6 +229,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 		showString("Started uncompress...");
 		BitInputStream inB = new BitInputStream(in);
 		BitOutputStream outB = new BitOutputStream(out);
+		freqMap = new HashMap<Integer,Integer>(); // initialize freqMap
 		
 		// create two TreeNodes: one to store root, one to modify
 		TreeNode n = null;
@@ -242,7 +245,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 		}
 		
 		// add EOF to freqMap
-		freqMap.put(PSEUDO_EOF,1);
+		freqMap.put(PSEUDO_EOF, 1);
 
 		// Handle the header
 		switch(HEADER_TYPE){
@@ -270,7 +273,9 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 			case 1:{
 				paths.clear();
 				root = buildThatTree(inB);
-				findAllPaths(root, "");;
+				findAllPaths(root, "");
+				root.printNode(root);
+				System.out.println("case 1");
 			}
 		}
 
@@ -280,6 +285,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 		int myBit = 0; // current bit
 		while(true){ 
 			myBit = inB.readBits(1); // read bits from stream
+			System.out.println(myBit);
 			if (myBit == -1){ // error case: no PSEUDO_EOF
 				inB.close();
 				outB.close();
@@ -373,6 +379,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 		if(curNode.myLeft == null && curNode.myRight == null){
 			outStream.writeBits(1, 1);
 			outStream.writeBits(BITS_PER_WORD + 1, curNode.myValue);
+			System.out.println("leaf: " + curNode.myValue);
 		}
 		
 		// Pre-order traversal: current, left, right
@@ -392,23 +399,28 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 		int curValue = -1;
 		if(curBit == 0){
 			newNode = new TreeNode(curValue, -1);
+			System.out.println("New Node: " + curValue);
 		} else{
 			curValue = inStream.readBits(BITS_PER_WORD + 1);
 			newNode = new TreeNode(curValue, 1);
 			// Must be a leaf, return
+			System.out.println("New leaf: " + curValue);
 			return newNode;
 		}
 
 		if(newNode.myValue == PSEUDO_EOF) {
 			// Unsure how to handle end of file
-			return null;
+			System.out.println("PSEUDO");
+			return newNode;
 		}	
 
 		// Recurse
 		TreeNode leftNode = buildThatTree(inStream);
 		TreeNode rightNode = buildThatTree(inStream);
 		newNode = new TreeNode(curValue, leftNode, rightNode);
-
+		
+		System.out.println("end of recurse. cur: " + curValue + "left: " + leftNode.myValue + "right: " + 
+				rightNode.myValue);
 		return newNode;
 	}
 	

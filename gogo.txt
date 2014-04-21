@@ -1,1 +1,3 @@
-go go gophers
+This is a small test. My name is timothy. I like to store things. I hate recursion. I would love
+to talk all about all the wonderful reasons that I have for not using  recursion, but there simply is
+not any reason to discuss it.
