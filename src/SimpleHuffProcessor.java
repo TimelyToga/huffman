@@ -5,6 +5,7 @@ import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.PriorityQueue;
+import java.util.Scanner;
 /**
  * SimpleHuffProcessor.java
  * Completed April 17, 2014
@@ -66,6 +67,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 			// Tree header
 			case 1:{
 				treeTraversal(root, outStream);
+				outStream.writeBits(BITS_PER_WORD + 1, PSEUDO_EOF);
 			}
 			default:
 				System.out.println("Choose a correct HEADER_TYPE value");
@@ -239,6 +241,9 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 			throw new IOException("Oops. Magic numbers are not equal.");
 		}
 		
+		// add EOF to freqMap
+		freqMap.put(PSEUDO_EOF,1);
+
 		// Handle the header
 		switch(HEADER_TYPE){
 			// Standard header style
@@ -248,27 +253,28 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 				for (int i = 0; i < ALPH_SIZE; i++){
 					freqMap.put(i,inB.readBits(BITS_PER_INT));
 				}
-
+				
+				// create priority queue
+				PriorityQueue<TreeNode> nodeForest = new PriorityQueue<TreeNode>();
+				for(int i = 0; i < ALPH_SIZE+1; i++){ // account for EOF
+					if(freqMap.get(i) != 0){
+						nodeForest.add(new TreeNode(i,freqMap.get(i)));
+					}
+				}
+				
+				// create new tree and set to root
+				root = createTree(nodeForest);	
 			}
+			
 			// Tree header
 			case 1:{
-				
+				paths.clear();
+				root = buildThatTree(inB);
+				findAllPaths(root, "");;
 			}
 		}
 
-		// add EOF to freqMap
-		freqMap.put(PSEUDO_EOF,1);
-
-		// create priority queue
-		PriorityQueue<TreeNode> nodeForest = new PriorityQueue<TreeNode>();
-		for(int i = 0; i < ALPH_SIZE+1; i++){ // account for EOF
-			if(freqMap.get(i) != 0){
-				nodeForest.add(new TreeNode(i,freqMap.get(i)));
-			}
-		}
-
-		n = createTree(nodeForest);	// create new tree and set to n
-		current = n; // set current to n
+		current = root; // set current to n
 
 		// read file by iterating until leaf is found
 		int myBit = 0; // current bit
@@ -366,7 +372,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 		// Base case
 		if(curNode.myLeft == null && curNode.myRight == null){
 			outStream.writeBits(1, 1);
-			outStream.writeBits(BITS_PER_WORD, curNode.myValue);
+			outStream.writeBits(BITS_PER_WORD + 1, curNode.myValue);
 		}
 		
 		// Pre-order traversal: current, left, right
@@ -379,5 +385,31 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 			treeTraversal(curNode.myRight, outStream);
 		}
 	}
+	
+	public TreeNode buildThatTree(BitInputStream inStream) throws IOException{
+		TreeNode newNode;
+		int curBit = inStream.readBits(1);
+		int curValue = -1;
+		if(curBit == 0){
+			newNode = new TreeNode(curValue, -1);
+		} else{
+			curValue = inStream.readBits(BITS_PER_WORD + 1);
+			newNode = new TreeNode(curValue, 1);
+			// Must be a leaf, return
+			return newNode;
+		}
 
+		if(newNode.myValue == PSEUDO_EOF) {
+			// Unsure how to handle end of file
+			return null;
+		}	
+
+		// Recurse
+		TreeNode leftNode = buildThatTree(inStream);
+		TreeNode rightNode = buildThatTree(inStream);
+		newNode = new TreeNode(curValue, leftNode, rightNode);
+
+		return newNode;
+	}
+	
 }
