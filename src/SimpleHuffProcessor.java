@@ -5,11 +5,12 @@ import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.PriorityQueue;
+import java.util.Scanner;
 /**
  * SimpleHuffProcessor.java
  * Completed April 17, 2014
  * @author Emre Sonmez (ebs32)
- * @author Tim Blumberg (NETID)
+ * @author Tim Blumberg (tsb20)
  */
 
 public class SimpleHuffProcessor implements IHuffProcessor {
@@ -20,7 +21,13 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 	int compressedSize; // size of compressed file
 	int originalSize; // size of original file
 	int difference; // actual file size - compressed file size 
+	TreeNode root;
 	
+	/*
+	 * 0 - Standard weights array header
+	 * 1 - Tree header implementation
+	 */
+	public final int HEADER_TYPE = 1;
 	boolean verbose = false;
 
 	/**
@@ -45,13 +52,29 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 		outStream.writeBits(BITS_PER_INT, MAGIC_NUMBER);
 
 		// write header
-		for(int a = 0; a < ALPH_SIZE; a++){
-			if (freqMap.containsKey(a)){ // pull frequencies from HashMap & write to header
-				outStream.writeBits(BITS_PER_INT,freqMap.get(a));
-			}else{ // write 0 to header
-				outStream.writeBits(BITS_PER_INT,0);
+		switch(HEADER_TYPE){
+			// Standard
+			case 0:{
+				for(int a = 0; a < ALPH_SIZE; a++){
+					if (freqMap.containsKey(a)){ // pull frequencies from HashMap & write to header
+						outStream.writeBits(BITS_PER_INT,freqMap.get(a));
+					}else{ // write 0 to header
+						outStream.writeBits(BITS_PER_INT,0);
+					}
+				}
+				break;
 			}
+			// Tree header
+			case 1:{
+				treeTraversal(root, outStream);
+				outStream.writeBits(BITS_PER_WORD + 1, PSEUDO_EOF);
+				break;
+			}
+			default:
+				System.out.println("Choose a correct HEADER_TYPE value");
+				break;
 		}
+
 		
 		// compress file
 		int current; // initialize integer (will represent bits read from inStream)
@@ -113,7 +136,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 		// Print extra weight information 
 		if(verbose) printWeights();
 		
-		TreeNode root = createTree(nodeForest); // create tree root
+		root = createTree(nodeForest); // create tree root
 		findAllPaths(root, ""); // fill HashMap paths
 		
 		// calculate size of original file
@@ -206,6 +229,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 		showString("Started uncompress...");
 		BitInputStream inB = new BitInputStream(in);
 		BitOutputStream outB = new BitOutputStream(out);
+		freqMap = new HashMap<Integer,Integer>(); // initialize freqMap
 		
 		// create two TreeNodes: one to store root, one to modify
 		TreeNode n = null;
@@ -219,31 +243,49 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 			outB.close();
 			throw new IOException("Oops. Magic numbers are not equal.");
 		}
-
-		// create map of frequencies
-		freqMap = new HashMap<Integer,Integer>();
-		for (int i = 0; i < ALPH_SIZE; i++){
-			freqMap.put(i,inB.readBits(BITS_PER_INT));
-		}
-
+		
 		// add EOF to freqMap
-		freqMap.put(PSEUDO_EOF,1);
+		freqMap.put(PSEUDO_EOF, 1);
 
-		// create priority queue
-		PriorityQueue<TreeNode> nodeForest = new PriorityQueue<TreeNode>();
-		for(int i = 0; i < ALPH_SIZE+1; i++){ // account for EOF
-			if(freqMap.get(i) != 0){
-				nodeForest.add(new TreeNode(i,freqMap.get(i)));
+		// Handle the header
+		switch(HEADER_TYPE){
+			// Standard header style
+			case 0:{
+				// create map of frequencies
+				freqMap = new HashMap<Integer,Integer>();
+				for (int i = 0; i < ALPH_SIZE; i++){
+					freqMap.put(i,inB.readBits(BITS_PER_INT));
+				}
+				
+				// create priority queue
+				PriorityQueue<TreeNode> nodeForest = new PriorityQueue<TreeNode>();
+				for(int i = 0; i < ALPH_SIZE+1; i++){ // account for EOF
+					if(freqMap.get(i) != 0){
+						nodeForest.add(new TreeNode(i,freqMap.get(i)));
+					}
+				}
+				
+				// create new tree and set to root
+				root = createTree(nodeForest);	
+			}
+			
+			// Tree header
+			case 1:{
+				paths.clear();
+				root = buildThatTree(inB);
+				findAllPaths(root, "");
+				root.printNode(root);
+				System.out.println("case 1");
 			}
 		}
 
-		n = createTree(nodeForest);	// create new tree and set to n
-		current = n; // set current to n
+		current = root; // set current to n
 
 		// read file by iterating until leaf is found
 		int myBit = 0; // current bit
 		while(true){ 
 			myBit = inB.readBits(1); // read bits from stream
+			System.out.println(myBit);
 			if (myBit == -1){ // error case: no PSEUDO_EOF
 				inB.close();
 				outB.close();
@@ -329,6 +371,57 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 			System.out.println(names[curName] + weights[a]);
 			curName++;
 		}
+		
 	}
+	
+	public void treeTraversal(TreeNode curNode, BitOutputStream outStream){
+		// Base case
+		if(curNode.myLeft == null && curNode.myRight == null){
+			outStream.writeBits(1, 1);
+			outStream.writeBits(BITS_PER_WORD + 1, curNode.myValue);
+			System.out.println("leaf: " + curNode.myValue);
+		}
+		
+		// Pre-order traversal: current, left, right
+		// write a 0 for current node
+		outStream.writeBits(1, 0);
+		if(curNode.myLeft != null){
+			treeTraversal(curNode.myLeft, outStream);
+		}
+		if(curNode.myRight != null){
+			treeTraversal(curNode.myRight, outStream);
+		}
+	}
+	
+	public TreeNode buildThatTree(BitInputStream inStream) throws IOException{
+		TreeNode newNode;
+		int curBit = inStream.readBits(1);
+		int curValue = -1;
+		if(curBit == 0){
+			newNode = new TreeNode(curValue, -1);
+			System.out.println("New Node: " + curValue);
+		} else{
+			curValue = inStream.readBits(BITS_PER_WORD + 1);
+			newNode = new TreeNode(curValue, 1);
+			// Must be a leaf, return
+			System.out.println("New leaf: " + curValue);
+			return newNode;
+		}
 
+		if(newNode.myValue == PSEUDO_EOF) {
+			// Unsure how to handle end of file
+			System.out.println("PSEUDO");
+			return newNode;
+		}	
+
+		// Recurse
+		TreeNode leftNode = buildThatTree(inStream);
+		TreeNode rightNode = buildThatTree(inStream);
+		newNode = new TreeNode(curValue, leftNode, rightNode);
+		
+		System.out.println("end of recurse. cur: " + curValue + "left: " + leftNode.myValue + "right: " + 
+				rightNode.myValue);
+		return newNode;
+	}
+	
 }

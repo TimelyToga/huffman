@@ -62,4 +62,17 @@ public class TreeNode implements Comparable<TreeNode> {
 
         return myWeight - rhs.myWeight;
     }
+    
+    public String printNode(TreeNode current){
+		String leftString = "null";
+		String rightString = "null";
+
+		if (current.myLeft != null)
+			leftString = printNode(current.myLeft);
+		if (current.myRight != null)
+			rightString = printNode(current.myRight);
+
+		return current.myValue + "\n" + current.myWeight + "Y: " + leftString + "\n"
+				+ current.myWeight + "N: " + rightString;
+    }
 }
